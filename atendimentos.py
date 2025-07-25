@@ -1,65 +1,88 @@
 import json
 import os
-import clientes
-import servicos
+from clientes import clientes
+from servicos import servicos
 
 ARQUIVO_ATENDIMENTOS = 'atendimentos.json'
 
 def carregar_atendimentos():
-    """Carrega a lista de atendimentos a partir de um arquivo JSON."""
+    """Carrega a lista de atendimentos do arquivo JSON."""
     if os.path.exists(ARQUIVO_ATENDIMENTOS):
         with open(ARQUIVO_ATENDIMENTOS, 'r', encoding='utf-8') as f:
             return json.load(f)
     else:
         return []
 
-def salvar_atendimentos(atendimentos):
-    """Salva a lista de atendimentos em um arquivo JSON."""
+atendimentos = carregar_atendimentos()  # variável global para atendimentos
+
+def salvar_atendimentos():
+    """Salva a lista de atendimentos no arquivo JSON."""
     with open(ARQUIVO_ATENDIMENTOS, 'w', encoding='utf-8') as f:
         json.dump(atendimentos, f, indent=4, ensure_ascii=False)
 
 def marcar_atendimento():
-    """Marca um atendimento associando cliente e serviço."""
-    atendimentos = carregar_atendimentos()
-    clientes_lista = clientes.carregar_clientes()
-    servicos_lista = servicos.carregar_servicos()
-
-    if not clientes_lista:
-        print("⚠️ Nenhum cliente cadastrado. Cadastre um cliente antes.")
-        return
-    if not servicos_lista:
-        print("⚠️ Nenhum serviço cadastrado. Cadastre um serviço antes.")
+    """Agenda um atendimento para cliente e serviço cadastrados, incluindo data e horário."""
+    if not clientes:
+        print("⚠️ Nenhum cliente cadastrado. Cadastre um cliente primeiro.")
         return
 
-    print("\nClientes cadastrados:")
-    for i, cliente in enumerate(clientes_lista, start=1):
-        print(f"{i}. {cliente['nome']} - {cliente['telefone']}")
-    escolha_cliente = int(input("Escolha o cliente pelo número: "))
-    cliente_escolhido = clientes_lista[escolha_cliente - 1]
+    if not servicos:
+        print("⚠️ Nenhum serviço cadastrado. Cadastre um serviço primeiro.")
+        return
 
-    print("\nServiços disponíveis:")
-    for i, servico in enumerate(servicos_lista, start=1):
-        print(f"{i}. {servico['nome']} - R$ {servico['preco']}")
-    escolha_servico = int(input("Escolha o serviço pelo número: "))
-    servico_escolhido = servicos_lista[escolha_servico - 1]
+    # Lista clientes
+    print("\n📋 Lista de clientes:")
+    for i, cliente in enumerate(clientes, start=1):
+        print(f"{i}. {cliente['nome']}")
+
+    try:
+        escolha_cliente = int(input("Escolha o número do cliente para o atendimento: "))
+        if escolha_cliente < 1 or escolha_cliente > len(clientes):
+            print("❌ Número inválido de cliente.")
+            return
+    except ValueError:
+        print("❌ Entrada inválida. Digite um número.")
+        return
+
+    cliente_escolhido = clientes[escolha_cliente - 1]
+
+    # Lista serviços
+    print("\n📋 Lista de serviços:")
+    for i, servico in enumerate(servicos, start=1):
+        print(f"{i}. {servico['nome']} - R$ {servico['preco']:.2f}")
+
+    try:
+        escolha_servico = int(input("Escolha o número do serviço: "))
+        if escolha_servico < 1 or escolha_servico > len(servicos):
+            print("❌ Número inválido de serviço.")
+            return
+    except ValueError:
+        print("❌ Entrada inválida. Digite um número.")
+        return
+
+    servico_escolhido = servicos[escolha_servico - 1]
+
+    data = input("Digite a data do atendimento (dd/mm/aaaa): ")
+    horario = input("Digite o horário do atendimento (ex: 14:30): ")
 
     atendimento = {
-        "cliente": cliente_escolhido,
-        "servico": servico_escolhido
+        "cliente": cliente_escolhido["nome"],
+        "servico": servico_escolhido["nome"],
+        "preco": servico_escolhido["preco"],
+        "data": data,
+        "horario": horario
     }
 
     atendimentos.append(atendimento)
-    salvar_atendimentos(atendimentos)
-    print(f"✅ Atendimento marcado para {cliente_escolhido['nome']} - Serviço: {servico_escolhido['nome']}")
+    salvar_atendimentos()
+
+    print(f"✅ Atendimento para {cliente_escolhido['nome']} agendado com sucesso em {data} às {horario}!")
 
 def listar_atendimentos():
-    """Lista todos os atendimentos marcados."""
-    atendimentos = carregar_atendimentos()
+    """Exibe todos os atendimentos agendados."""
     if not atendimentos:
-        print("⚠️ Nenhum atendimento marcado.")
+        print("⚠️ Nenhum atendimento agendado.")
     else:
-        print("\n📋 Lista de atendimentos:")
+        print("\n📅 Atendimentos agendados:")
         for i, atendimento in enumerate(atendimentos, start=1):
-            cliente = atendimento['cliente']
-            servico = atendimento['servico']
-            print(f"{i}. Cliente: {cliente['nome']} - Serviço: {servico['nome']} - Preço: R$ {servico['preco']}")
+            print(f"{i}. {atendimento['cliente']} - {atendimento['servico']} - R$ {atendimento['preco']:.2f} em {atendimento['data']} às {atendimento['horario']}")
